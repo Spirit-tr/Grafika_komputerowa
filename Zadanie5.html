@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGL - Korkociąg i Piramida</title>
+    <style>
+        body, html { height: 100%; margin: 0; }
+        canvas { width: 100%; height: 100%; display: block; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gl-matrix/2.4.0/gl-matrix.js"></script>
+</head>
+<body>
+<canvas id="glcanvas"></canvas>
+<script>
+    // Inicjalizacja WebGL
+    const canvas = document.getElementById('glcanvas');
+    const gl = canvas.getContext('webgl'); 
+
+    if (!gl) {
+        alert("Nie udało się uruchomić WebGL!");
+        throw new Error("Nie udało się uzyskać kontekstu WebGL");
+    }
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const vsSource = `
+        attribute vec4 a_position;
+        uniform mat4 u_matrix;
+        void main(void) {
+            gl_Position = u_matrix * a_position;
+        }`;
+
+    const fsSource = `
+        precision mediump float;
+        uniform vec4 u_color;
+        void main(void) {
+            gl_FragColor = u_color;
+        }`;
+
+    function compileShader(source, type) {
+        const shader = gl.createShader(type);
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+            console.error('Shader compile error:', gl.getShaderInfoLog(shader));
+            return null;
+        }
+        return shader;
+    }
+
+    const vertexShader = compileShader(vsSource, gl.VERTEX_SHADER);
+    const fragmentShader = compileShader(fsSource, gl.FRAGMENT_SHADER);
+    const shaderProgram = gl.createProgram();
+    gl.attachShader(shaderProgram, vertexShader);
+    gl.attachShader(shaderProgram, fragmentShader);
+    gl.linkProgram(shaderProgram);
+    if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+        console.error('Program linking error:', gl.getProgramInfoLog(shaderProgram));
+    }
+
+    const positionLocation = gl.getAttribLocation(shaderProgram, "a_position");
+    const matrixLocation = gl.getUniformLocation(shaderProgram, "u_matrix");
+    const colorLocation = gl.getUniformLocation(shaderProgram, "u_color");
+
+    gl.useProgram(shaderProgram);
+
+    // Parametry obrotu
+    let rotateX = 0, rotateY = 0, rotateZ = 0;
+    let objectNumber = 1;  
+    const N = 30;  
+
+    // Funkcja generująca korkociąg (skaluje obiekt)
+    function generateHelix(n) {
+        const vertices = [];
+        const scale = 0.5; 
+
+        for (let i = 0; i < n * 100; ++i) {
+            const t = i * 0.1;
+            const x = t * 0.1 * scale;
+            const y = Math.sin(t) * (1 + t * 0.01) * scale;
+            const z = Math.cos(t) * (1 + t * 0.01) * scale;
+            vertices.push(x, y, z);
+        }
+        return new Float32Array(vertices);
+    }
+
+    // Funkcja generująca piramidę (skaluje obiekt)
+    function generatePyramid(n) {
+        const vertices = [];
+        const scale = 0.5; 
+        const angleStep = 2 * Math.PI / n;
+
+        for (let i = 0; i <= n; i++) {
+            const angle = i * angleStep;
+            vertices.push(Math.cos(angle) * scale, 0, Math.sin(angle) * scale);
+        }
+
+        const top = [0, 2 * scale, 0]; 
+        for (let i = 0; i <= n; i++) {
+            const angle = i * angleStep;
+            vertices.push(...top);
+            vertices.push(Math.cos(angle) * scale, 0, Math.sin(angle) * scale);
+        }
+
+        return new Float32Array(vertices);
+    }
+
+    // Tworzenie buforów i ustawianie atrybutów
+    let helixBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, helixBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, generateHelix(N), gl.STATIC_DRAW);  
+
+    let pyramidBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, pyramidBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, generatePyramid(N), gl.STATIC_DRAW);  
+
+    function rotateMatrix() {
+        const matrix = new Float32Array(16);
+        mat4.identity(matrix);           
+        mat4.rotateX(matrix, matrix, rotateX);  
+        mat4.rotateY(matrix, matrix, rotateY); 
+        mat4.rotateZ(matrix, matrix, rotateZ);  
+        return matrix;
+    }
+
+    function drawScene() {
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        gl.enable(gl.DEPTH_TEST);
+
+        const matrix = rotateMatrix();
+
+        gl.uniformMatrix4fv(matrixLocation, false, matrix);
+        gl.uniform4fv(colorLocation, objectNumber === 1 ? [0, 1, 0, 1] : [0.2, 0.2, 1, 1]);
+
+        // Rysowanie
+        let buffer = objectNumber === 1 ? helixBuffer : pyramidBuffer;
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+        gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(positionLocation);
+
+        gl.drawArrays(objectNumber === 1 ? gl.LINE_STRIP : gl.TRIANGLE_STRIP, 0, N * 100);
+        requestAnimationFrame(drawScene);
+    }
+
+    document.addEventListener('keydown', function (e) {
+        switch (e.key) {
+            case '1': objectNumber = 1; break;
+            case '2': objectNumber = 2; break;
+            case 'ArrowLeft': rotateY -= 0.05; break;
+            case 'ArrowRight': rotateY += 0.05; break;
+            case 'ArrowUp': rotateX -= 0.05; break;
+            case 'ArrowDown': rotateX += 0.05; break;
+            case 'PageUp': rotateZ += 0.05; break;
+            case 'PageDown': rotateZ -= 0.05; break;
+            case 'Home': rotateX = rotateY = rotateZ = 0; break;
+        }
+    });
+
+    drawScene();
+</script>
+</body>
+</html>

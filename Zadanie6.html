@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <title>Piramida z podstawą 5-kątną</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+  <script>
+    const scene = new THREE.Scene();
+
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 3, 7);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+
+    const pointLight = new THREE.PointLight(0xffcc88, 1, 50);
+    const lightSphere = new THREE.Mesh(
+      new THREE.SphereGeometry(0.1, 16, 16),
+      new THREE.MeshBasicMaterial({ color: 0xffcc88 })
+    );
+    pointLight.add(lightSphere);
+    scene.add(pointLight);
+
+    const baseGroup = new THREE.Group();
+    scene.add(baseGroup);
+
+    const pentagonShape = new THREE.Shape();
+    const radius = 2.5;
+    for (let i = 0; i < 5; i++) {
+      const angle = (i / 5) * Math.PI * 2 - Math.PI / 2;
+      const x = Math.cos(angle) * radius;
+      const y = Math.sin(angle) * radius;
+      if (i === 0) pentagonShape.moveTo(x, y);
+      else pentagonShape.lineTo(x, y);
+    }
+    pentagonShape.closePath();
+
+    const extrudeSettings = {
+      depth: 0.2,
+      bevelEnabled: false
+    };
+    const baseGeometry = new THREE.ExtrudeGeometry(pentagonShape, extrudeSettings);
+    const baseMaterial = new THREE.MeshStandardMaterial({ color: 0x333333 });
+    const baseMesh = new THREE.Mesh(baseGeometry, baseMaterial);
+    baseMesh.rotation.x = -Math.PI / 2;
+    baseMesh.position.y = 0;
+    baseGroup.add(baseMesh);
+
+    const pyramidGeometry = new THREE.ConeGeometry(1.8, 3, 5);
+    const materials = [
+      new THREE.MeshStandardMaterial({ color: 0xff0000 }),
+      new THREE.MeshStandardMaterial({ color: 0x00ff00 }),
+      new THREE.MeshStandardMaterial({ color: 0x0000ff }),
+      new THREE.MeshStandardMaterial({ color: 0xffff00 }),
+      new THREE.MeshStandardMaterial({ color: 0xff00ff }),
+    ];
+    for (let i = 0; i < pyramidGeometry.groups.length; i++) {
+      pyramidGeometry.groups[i].materialIndex = i % materials.length;
+    }
+
+    const pyramid = new THREE.Mesh(pyramidGeometry, materials);
+    pyramid.position.y = 1.6;
+    baseGroup.add(pyramid);
+
+    let angle = 0;
+
+    let isDragging = false;
+    let previousMouseX = 0;
+
+    renderer.domElement.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      previousMouseX = e.clientX;
+    });
+
+    renderer.domElement.addEventListener('mouseup', () => {
+      isDragging = false;
+    });
+
+    renderer.domElement.addEventListener('mousemove', (e) => {
+      if (isDragging) {
+        const deltaX = e.clientX - previousMouseX;
+        baseGroup.rotation.y += deltaX * 0.01;
+        previousMouseX = e.clientX;
+      }
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      angle += 0.01;
+      pointLight.position.set(Math.sin(angle) * 4, 3, Math.cos(angle) * 4);
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth/window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>

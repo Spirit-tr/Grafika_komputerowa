@@ -190,7 +190,7 @@ function draw() {
    
     pushMatrix();
     currentColor = [0.222, 0.888, 0.222];
-    mat4.translate(modelview, modelview, [-1.2, -4.1, -2.0]);
+    mat4.translate(modelview, modelview, [1.2, -4.1, -2.0]);
     mat4.scale(modelview,modelview,[0.05, 0.05, 0.05]);
     teapot.render();
     popMatrix();
@@ -202,7 +202,7 @@ function draw() {
     mat4.rotate(modelview, modelview, rotateEachFrame, [0, 0, 1]);
     mat4.translate(modelview, modelview, [2.9, -2, 0]);
     
-    let vertices =7;
+    let vertices =5;
     for(let i =0; i<vertices;i++){
         pushMatrix();
         mat4.translate(modelview, modelview, [-3, 1.95, 0]);

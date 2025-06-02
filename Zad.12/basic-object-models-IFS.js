@@ -25,7 +25,7 @@
   * has a lot of redundancy.)
   * @side the length of a side of the cube.  If not given, the value will be 1.
   */
-function cube(side) {
+  function cube(side) {
    var s = (side || 1)/2;
    var coords = [];
    var normals = [];
@@ -525,4 +525,3 @@ function uvCone(radius, height, slices, noBottom) {
        indices: indices
    };   
 }
-

@@ -202,12 +202,12 @@ function draw() {
     mat4.rotate(modelview, modelview, rotateEachFrame, [0, 0, 1]);
     mat4.translate(modelview, modelview, [2.9, -2, 0]);
     
-    let vertices =5;
-    for(let i =0; i<vertices;i++){
+    let vertices = 5;
+    for(let i = 0; i < vertices; i++){
         pushMatrix();
         mat4.translate(modelview, modelview, [-3, 1.95, 0]);
-        mat4.rotateY(modelview,modelview, Math.PI);
-        mat4.rotateZ(modelview,modelview, i*(360/vertices)*(Math.PI/180));
+        mat4.rotateY(modelview, modelview, Math.PI);
+        mat4.rotateZ(modelview, modelview, i * (360 / vertices) * (Math.PI / 180));
         addBlade();
         popMatrix();
     }

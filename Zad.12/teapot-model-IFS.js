@@ -7,6 +7,8 @@
  * The first three properties are of type Float32Array, while teapotModel.indices
  * is of type Uint16Array.
 */
+function teapot(){
+
 var teapotModel = {
 
 "vertexPositions" : new Float32Array( [5.929688, 4.125, 0, 5.387188, 4.125, 2.7475, 5.2971, 4.494141, 2.70917,
@@ -711,4 +713,5 @@ var teapotModel = {
     785, 790, 791, 791, 786, 785] )
 
 };
-
+return teapotModel;
+}
